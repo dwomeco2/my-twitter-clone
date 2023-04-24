@@ -8,9 +8,10 @@
     "postinstall": "prisma generate",
     "lint": "next lint",
     "start": "next start",
-    "docker-compose:remove": "docker-compose down && docker volume rm $(docker volume ls -q)",
-    "docker-compose:down": "docker-compose down",
-    "docker-compose:up": "docker-compose up -d"
+    "dc:remove": "docker-compose down && docker volume rm $(docker volume ls -q)",
+    "dc:down": "docker-compose down",
+    "dc:up": "docker-compose up -d",
+    "prisma:studio": "prisma studio &"
   },
   "dependencies": {
     "@prisma/client": "^4.11.0",
