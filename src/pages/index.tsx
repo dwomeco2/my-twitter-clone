@@ -1,13 +1,44 @@
-import { type NextPage } from "next";
+import { type GetServerSideProps, type NextPage } from "next";
 import Head from "next/head";
-import Link from "next/link";
+import { signIn, useSession } from "next-auth/react";
+import { create } from "mutative";
 
 import { api } from "~/utils/api";
+import { getServerAuthSession } from "~/server/auth";
+import { useState } from "react";
 
 const Home: NextPage = () => {
-  const hello = api.example.hello.useQuery({ text: "from tRPC" });
+  const session = useSession();
+  const [postContent, setPostContent] = useState("");
 
-  const users = api.example.getAllUser.useQuery();
+  if (!session.data?.user) {
+    return <div>Not signed in</div>;
+  }
+
+  const utils = api.useContext();
+
+  const posts = api.example.userPostById.useQuery({
+    id: session.data.user.id,
+  });
+
+  const createPost = api.example.createPost.useMutation({
+    onSuccess: (data) => {
+      const key = { id: data.authorId };
+      const old = utils.example.userPostById.getData(key);
+      if (old) {
+        const newData = create(old, (draft) => {
+          draft.posts.push(data);
+        });
+        utils.example.userPostById.setData(key, newData);
+      }
+    },
+  });
+
+  function createPostOnClick() {
+    if (postContent.length > 0) {
+      createPost.mutate({ content: postContent });
+    }
+  }
 
   return (
     <>
@@ -17,42 +48,31 @@ const Home: NextPage = () => {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <main className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-[#2e026d] to-[#15162c]">
-        <div className="container flex flex-col items-center justify-center gap-12 px-4 py-16 ">
-          <h1 className="text-5xl font-extrabold tracking-tight text-white sm:text-[5rem]">
-            Create <span className="text-[hsl(280,100%,70%)]">T3</span> App
-          </h1>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:gap-8">
-            <Link
-              className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
-              href="https://create.t3.gg/en/usage/first-steps"
-              target="_blank"
-            >
-              <h3 className="text-2xl font-bold">First Steps →</h3>
-              <div className="text-lg">
-                Just the basics - Everything you need to know to set up your
-                database and authentication.
-              </div>
-            </Link>
-            <Link
-              className="flex max-w-xs flex-col gap-4 rounded-xl bg-white/10 p-4 text-white hover:bg-white/20"
-              href="https://create.t3.gg/en/introduction"
-              target="_blank"
-            >
-              <h3 className="text-2xl font-bold">Documentation →</h3>
-              <div className="text-lg">
-                Learn more about Create T3 App, the libraries it uses, and how
-                to deploy it.
-              </div>
-            </Link>
-          </div>
-          <p className="text-2xl text-white">
-            {hello.data ? hello.data.greeting : "Loading tRPC query..."}
-          </p>
-          <p className="text-2xl text-white">
-            {users.data
-              ? JSON.stringify(users.data)
-              : "Loading tRPC users query..."}
-          </p>
+        <button
+          type="button"
+          className="rounded-md border border-rose-400 bg-transparent px-8 py-2"
+          onClick={() => void signIn()}
+        >
+          sign in with google
+        </button>
+        <p className="text-2xl text-white">
+          {posts.data?.posts.map((post) => {
+            return <div key={post.id}>{post.content}</div>;
+          })}
+        </p>
+        <div>
+          <input
+            type="text"
+            value={postContent}
+            onChange={(e) => setPostContent(e.target.value)}
+          />
+          <button
+            type="button"
+            className="rounded-md border border-rose-400 bg-transparent px-8 py-2"
+            onClick={createPostOnClick}
+          >
+            create Post
+          </button>
         </div>
       </main>
     </>
@@ -60,3 +80,21 @@ const Home: NextPage = () => {
 };
 
 export default Home;
+
+export const getServerSideProps: GetServerSideProps = async ({ req, res }) => {
+  const session = await getServerAuthSession({ req, res });
+  if (!session) {
+    return {
+      redirect: {
+        destination: "/",
+        permanent: false,
+      },
+    };
+  }
+
+  return {
+    props: {
+      session,
+    },
+  };
+};
