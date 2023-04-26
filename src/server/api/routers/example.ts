@@ -23,11 +23,22 @@ export const exampleRouter = createTRPCRouter({
     .input(z.object({ id: z.string() }))
     .query(({ ctx, input }) => {
       return ctx.prisma.user.findUnique({
+        select: {
+          name: true,
+          posts: {
+            select: {
+              id: true,
+              content: true,
+              createdAt: true,
+              type: true,
+            },
+            orderBy: {
+              createdAt: "desc",
+            },
+          },
+        },
         where: {
           id: input.id,
-        },
-        include: {
-          posts: true,
         },
       });
     }),
