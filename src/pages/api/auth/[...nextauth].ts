@@ -14,11 +14,11 @@ export const authOptions: NextAuthOptions = {
     }),
   ],
   callbacks: {
-    signIn({ account, profile }) {
+    signIn({ account }) {
       if (account?.provider === "google") {
         // console.log(account, profile);
       }
-      return true; // Do different verification for other providers that don't have `email_verified`
+      return true;
     },
     redirect({ url, baseUrl }) {
       if (url.startsWith("/")) return `${baseUrl}${url}`;

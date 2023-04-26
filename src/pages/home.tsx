@@ -19,15 +19,15 @@ const TweetComponent = () => {
 
   const utils = api.useContext();
 
-  const createPost = api.example.createPost.useMutation({
+  const createPost = api.user.createPost.useMutation({
     onSuccess: (data) => {
       const key = { id: data.authorId };
-      const old = utils.example.userPostById.getData(key);
+      const old = utils.user.userPostById.getData(key);
       if (old) {
         const newData = create(old, (draft) => {
           draft.posts.unshift(data);
         });
-        utils.example.userPostById.setData(key, newData);
+        utils.user.userPostById.setData(key, newData);
       }
     },
   });
@@ -103,10 +103,9 @@ const Post = (props: PostProps) => {
 const Home = () => {
   const { data: session } = useSession();
 
-  const user = session?.user;
-  const userId = user?.id ?? "";
+  const userId = session?.user?.id ?? "";
 
-  const posts = api.example.userPostById.useQuery(
+  const posts = api.user.userPostById.useQuery(
     {
       id: userId,
     },
