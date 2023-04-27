@@ -1,3 +1,4 @@
+import DOMPurify from "isomorphic-dompurify";
 import { PostType } from "@prisma/client";
 import { z } from "zod";
 
@@ -43,7 +44,11 @@ export const userRouter = createTRPCRouter({
       });
     }),
   createPost: protectedProcedure
-    .input(z.object({ content: z.string().min(1) }))
+    .input(
+      z.object({ content: z.string().min(1) }).transform((v) => {
+        return { ...v, content: DOMPurify.sanitize(v.content) };
+      })
+    )
     .mutation(({ ctx, input }) => {
       const user = ctx.session.user;
       return ctx.prisma.post.create({
