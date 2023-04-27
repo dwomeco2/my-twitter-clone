@@ -13,6 +13,7 @@ export const authOptions: NextAuthOptions = {
       clientSecret: env.NEXT_PUBLIC_CLIENT_SECRET,
     }),
   ],
+  secret: env.SECRET,
   callbacks: {
     signIn({ account }) {
       if (account?.provider === "google") {
